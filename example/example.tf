@@ -4,9 +4,6 @@ provider "aws" {
 
 resource "aws_s3_bucket" "sftp" {
   bucket = "sftp-s3-bucket-test"
-  versioning {
-    enabled       = try(var.s3_bucket_versioning, true)
-  }
 }
 
 module "sftp" {
