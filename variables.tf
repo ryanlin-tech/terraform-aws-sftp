@@ -1,5 +1,23 @@
 #Module      : SFTP
 #Description : Terraform sftp module variables.
+variable "name" {
+  type        = string
+  default     = ""
+  description = "Name  (e.g. `app` or `cluster`)."
+}
+
+variable "environment" {
+  type        = string
+  default     = ""
+  description = "Environment (e.g. `prod`, `dev`, `staging`)."
+}
+
+variable "label_order" {
+  type        = list(any)
+  default     = []
+  description = "Label order, e.g. `name`,`application`."
+}
+
 variable "enable_sftp" {
   type        = bool
   default     = true
