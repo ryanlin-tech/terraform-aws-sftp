@@ -23,6 +23,20 @@ data "aws_iam_policy_document" "transfer_server_assume_policy" {
     resources = ["*"]
   }
 }
+data "aws_iam_policy_document" "secrets_manager_read_write" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:DeleteSecret",
+      "secretsmanager:ListSecretVersionIds"
+    ]
+
+    resources = ["arn:aws:secretsmanager:*:*:secret/*"]
+  }
+}
 
 # Module      : IAM ROLE
 # Description : This data source can be used to fetch information about a specific IAM role.
@@ -42,6 +56,43 @@ resource "aws_iam_role_policy" "transfer_server_policy" {
   role   = join("", aws_iam_role.transfer_server_role.*.name)
   policy = data.aws_iam_policy_document.transfer_server_assume_policy.json
 }
+
+resource "aws_iam_role_policy" "transfer_server_policy_cloudwatch" {
+  count = var.enable_sftp ? 1 : 0
+  
+  name = "log-activity-with-cloudwatch"
+  role = join("", aws_iam_role.transfer_server_role.*.name)
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "AllowCloudWatchLogs"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:DescribeLogStreams",
+          "logs:CreateLogGroup",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:*:*:log-group:/aws/transfer/*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "secrets_manager_read_write" {
+  count = var.enable_sftp ? 1 : 0
+  
+  name = "secrets_manager_read_write"
+  role = join("", aws_iam_role.transfer_server_role.*.name)
+  policy = data.aws_iam_policy_document.secrets_manager_read_write.json
+}
+
+# IAM ROLE POLICY for SecretsManagerReadWrite
+
 
 # Module      : AWS TRANSFER SERVER
 # Description : Provides a AWS Transfer Server resource.
